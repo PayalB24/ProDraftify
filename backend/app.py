@@ -14,6 +14,10 @@ CORS(app)
 
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
+@app.route('/')
+def home():
+    return "✅ ProDraftify Flask API is running!"
+
 def build_prompt(data):
     language = data.get('language')
     category = data.get('category')
@@ -35,13 +39,11 @@ def build_prompt(data):
     if missing_fields:
         return None, f"Please provide a custom value for: {', '.join(missing_fields)}."
 
-    # Resolve final values
     final_category = custom_fields["category"] if category == "Other" else category
     final_tone = custom_fields["tone"] if tone == "Other" else tone
     final_topic = custom_fields["topic"] if topic == "Other" else topic
     final_recipient_title = custom_fields["recipientTitle"] if recipient_title == "Other" else recipient_title
 
-    # Compose prompt
     prompt = (
         f"Write a {final_tone} email in {language} under the category '{final_category}'. "
         f"The purpose is: {final_topic}. "
@@ -54,7 +56,6 @@ def build_prompt(data):
         prompt += f" Additional details: {custom_prompt}"
 
     return prompt, None
-
 
 def generate_email_with_retry(prompt, retries=3):
     contents = [types.Content(role="user", parts=[types.Part(text=prompt)])]
@@ -116,7 +117,6 @@ def grammar_check_with_retry(text, retries=3):
 
     return None, "Service unavailable after retries. Please try again later."
 
-
 @app.route('/generate-email', methods=['POST'])
 def generate_email():
     try:
@@ -138,7 +138,6 @@ def generate_email():
         print("Error during email generation:", e)
         return jsonify({"error": str(e)}), 500
 
-
 @app.route('/grammar-check', methods=['POST'])
 def grammar_check():
     try:
@@ -157,7 +156,6 @@ def grammar_check():
     except Exception as e:
         print("Error during grammar check:", e)
         return jsonify({"error": str(e)}), 500
-
 
 @app.route('/download-pdf', methods=['POST'])
 def download_pdf():
@@ -178,6 +176,5 @@ def download_pdf():
         print("Error generating PDF:", e)
         return jsonify({"error": "Failed to generate PDF"}), 500
 
-
 if __name__ == '__main__':
-    app.run(port=8000)
+    app.run()
