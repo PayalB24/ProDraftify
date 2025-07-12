@@ -82,7 +82,7 @@ function EmailGenerator() {
     setConversation((prev) => [...prev, { message: 'Generating your email...', type: 'sent' }]);
 
     try {
-      const res = await axios.post('http://localhost:8000/generate-email', form);
+      const res = await axios.post('https://prodraftify-3.onrender.com/generate-email', form);
       const email = res.data.email;
       setGeneratedEmail(email);
       setCanDownload(true);
@@ -103,10 +103,11 @@ function EmailGenerator() {
   const downloadPDF = async () => {
     try {
       const res = await axios.post(
-        'http://localhost:8000/download-pdf',
-        { email: generatedEmail },
-        { responseType: 'blob' }
-      );
+  'https://prodraftify-3.onrender.com/download-pdf',
+  { email: generatedEmail },
+  { responseType: 'blob' }
+);
+
       const blob = new Blob([res.data], { type: 'application/pdf' });
       const link = document.createElement('a');
       link.href = window.URL.createObjectURL(blob);
