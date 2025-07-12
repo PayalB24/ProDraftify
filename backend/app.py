@@ -11,14 +11,13 @@ load_dotenv()
 
 app = Flask(__name__)
 
-# ✅ Setup CORS for your deployed frontend
+# ✅ CORS setup for your deployed React app
 CORS(app, resources={r"/*": {"origins": "https://prodraftify-4.onrender.com"}}, supports_credentials=True)
 
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 @app.after_request
 def after_request(response):
-    # ✅ This makes sure preflight OPTIONS get proper headers
     response.headers.add('Access-Control-Allow-Origin', 'https://prodraftify-4.onrender.com')
     response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
     response.headers.add('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
@@ -28,10 +27,11 @@ def after_request(response):
 def home():
     return "✅ ProDraftify Flask API is running!"
 
-# --- (keep all your other routes unchanged below this) ---
+# -----------------------------
+# Utility functions
+# -----------------------------
 
 def build_prompt(data):
-    # unchanged
     language = data.get('language')
     category = data.get('category')
     tone = data.get('tone')
@@ -71,7 +71,6 @@ def build_prompt(data):
     return prompt, None
 
 def generate_email_with_retry(prompt, retries=3):
-    # unchanged
     contents = [types.Content(role="user", parts=[types.Part(text=prompt)])]
     config = types.GenerateContentConfig(response_mime_type="text/plain")
 
@@ -84,7 +83,6 @@ def generate_email_with_retry(prompt, retries=3):
             )
             email_text = ''.join(chunk.text for chunk in response)
             return email_text, None
-
         except Exception as e:
             error_str = str(e)
             if "503" in error_str or "UNAVAILABLE" in error_str:
@@ -97,7 +95,6 @@ def generate_email_with_retry(prompt, retries=3):
     return None, "Service unavailable after retries. Please try again later."
 
 def grammar_check_with_retry(text, retries=3):
-    # unchanged
     prompt = (
         f"Rewrite the following text into a complete, professional email in English. "
         f"Ensure it is well-formatted\n"
@@ -120,7 +117,6 @@ def grammar_check_with_retry(text, retries=3):
             )
             corrected_text = ''.join(chunk.text for chunk in response)
             return corrected_text.strip(), None
-
         except Exception as e:
             error_str = str(e)
             if "503" in error_str or "UNAVAILABLE" in error_str:
@@ -132,9 +128,12 @@ def grammar_check_with_retry(text, retries=3):
 
     return None, "Service unavailable after retries. Please try again later."
 
+# -----------------------------
+# Routes
+# -----------------------------
+
 @app.route('/generate-email', methods=['POST'])
 def generate_email():
-    # unchanged
     try:
         data = request.get_json()
         prompt, error = build_prompt(data)
@@ -149,18 +148,15 @@ def generate_email():
 
         print("\n--- Generated Email ---\n", email_text)
         return jsonify({"email": email_text}), 200
-
     except Exception as e:
         print("Error during email generation:", e)
         return jsonify({"error": str(e)}), 500
 
 @app.route('/grammar-check', methods=['POST'])
 def grammar_check():
-    # unchanged
     try:
         data = request.get_json()
         input_text = data.get("text", "").strip()
-
         if not input_text:
             return jsonify({"error": "No text provided for grammar check."}), 400
 
@@ -169,18 +165,15 @@ def grammar_check():
             return jsonify({"error": error}), 503
 
         return jsonify({"correctedText": corrected_text}), 200
-
     except Exception as e:
         print("Error during grammar check:", e)
         return jsonify({"error": str(e)}), 500
 
 @app.route('/download-pdf', methods=['POST'])
 def download_pdf():
-    # unchanged
     try:
         data = request.get_json()
         email_text = data.get("email", "").strip()
-
         if not email_text:
             return jsonify({"error": "Email content is missing"}), 400
 
@@ -189,10 +182,22 @@ def download_pdf():
         pdfkit.from_string(html, pdf_file)
 
         return send_file(pdf_file, as_attachment=True, download_name="generated_email.pdf")
-
     except Exception as e:
         print("Error generating PDF:", e)
         return jsonify({"error": "Failed to generate PDF"}), 500
+
+# -----------------------------
+# Explicit OPTIONS handler for CORS preflight
+# -----------------------------
+@app.route('/generate-email', methods=['OPTIONS'])
+@app.route('/grammar-check', methods=['OPTIONS'])
+@app.route('/download-pdf', methods=['OPTIONS'])
+def handle_options():
+    response = jsonify({})
+    response.headers.add('Access-Control-Allow-Origin', 'https://prodraftify-4.onrender.com')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
+    return response, 200
 
 if __name__ == '__main__':
     app.run()
