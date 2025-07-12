@@ -10,15 +10,28 @@ import time
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app)
+
+# ✅ Setup CORS for your deployed frontend
+CORS(app, resources={r"/*": {"origins": "https://prodraftify-4.onrender.com"}}, supports_credentials=True)
 
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+
+@app.after_request
+def after_request(response):
+    # ✅ This makes sure preflight OPTIONS get proper headers
+    response.headers.add('Access-Control-Allow-Origin', 'https://prodraftify-4.onrender.com')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
+    return response
 
 @app.route('/')
 def home():
     return "✅ ProDraftify Flask API is running!"
 
+# --- (keep all your other routes unchanged below this) ---
+
 def build_prompt(data):
+    # unchanged
     language = data.get('language')
     category = data.get('category')
     tone = data.get('tone')
@@ -58,6 +71,7 @@ def build_prompt(data):
     return prompt, None
 
 def generate_email_with_retry(prompt, retries=3):
+    # unchanged
     contents = [types.Content(role="user", parts=[types.Part(text=prompt)])]
     config = types.GenerateContentConfig(response_mime_type="text/plain")
 
@@ -83,6 +97,7 @@ def generate_email_with_retry(prompt, retries=3):
     return None, "Service unavailable after retries. Please try again later."
 
 def grammar_check_with_retry(text, retries=3):
+    # unchanged
     prompt = (
         f"Rewrite the following text into a complete, professional email in English. "
         f"Ensure it is well-formatted\n"
@@ -119,6 +134,7 @@ def grammar_check_with_retry(text, retries=3):
 
 @app.route('/generate-email', methods=['POST'])
 def generate_email():
+    # unchanged
     try:
         data = request.get_json()
         prompt, error = build_prompt(data)
@@ -140,6 +156,7 @@ def generate_email():
 
 @app.route('/grammar-check', methods=['POST'])
 def grammar_check():
+    # unchanged
     try:
         data = request.get_json()
         input_text = data.get("text", "").strip()
@@ -159,6 +176,7 @@ def grammar_check():
 
 @app.route('/download-pdf', methods=['POST'])
 def download_pdf():
+    # unchanged
     try:
         data = request.get_json()
         email_text = data.get("email", "").strip()
