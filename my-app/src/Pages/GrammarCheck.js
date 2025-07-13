@@ -10,7 +10,7 @@ function GrammarCheck() {
     setLoading(true);
     try {
       const res = await axios.post(
-        'https://prodraftify-4.onrender.com/grammar-check',
+        'https://prodraftify-3.onrender.com/grammar-check',
         { text: inputText }
       );
       setCorrectedText(res.data.correctedText);
@@ -24,7 +24,7 @@ function GrammarCheck() {
   const downloadPDF = async () => {
     try {
       const res = await axios.post(
-        'https://prodraftify-4.onrender.com/download-pdf',
+        'https://prodraftify-3.onrender.com/download-pdf',
         { email: correctedText },
         { responseType: 'blob' }
       );
