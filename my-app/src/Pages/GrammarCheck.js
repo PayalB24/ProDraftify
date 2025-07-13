@@ -9,10 +9,11 @@ function GrammarCheck() {
   const handleCheck = async () => {
     setLoading(true);
     try {
-      const response = await axios.post('http://localhost:8000/grammar-check', {
-        text: inputText
-      });
-      setCorrectedText(response.data.correctedText);
+      const res = await axios.post(
+        'https://prodraftify-4.onrender.com/grammar-check',
+        { text: inputText }
+      );
+      setCorrectedText(res.data.correctedText);
     } catch (err) {
       console.error(err);
       setCorrectedText("Error: Could not check grammar or format.");
@@ -23,10 +24,11 @@ function GrammarCheck() {
   const downloadPDF = async () => {
     try {
       const res = await axios.post(
-        'http://localhost:8000/download-pdf',
+        'https://prodraftify-4.onrender.com/download-pdf',
         { email: correctedText },
         { responseType: 'blob' }
       );
+
       const blob = new Blob([res.data], { type: 'application/pdf' });
       const link = document.createElement('a');
       link.href = window.URL.createObjectURL(blob);
